@@ -1,65 +1,154 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState } from 'react';
+import Timeline, { ElectionStage } from '@/components/Timeline';
+import ChatInterface, { Message } from '@/components/ChatInterface';
+import QuizMode from '@/components/QuizMode';
+import ShareCard from '@/components/ShareCard';
+
+type AppMode = 'explore' | 'quiz';
 
 export default function Home() {
+  const [mode, setMode] = useState<AppMode>('explore');
+  const [selectedStageId, setSelectedStageId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const generateId = () => Math.random().toString(36).substring(2, 15);
+
+  const sendMessageToApi = async (content: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: content }),
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        setMessages((prev) => [
+          ...prev,
+          { id: generateId(), role: 'assistant', content: data.reply },
+        ]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          { id: generateId(), role: 'assistant', content: 'Oops! I had trouble fetching that information. Please try again.', isError: true },
+        ]);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setMessages((prev) => [
+        ...prev,
+        { id: generateId(), role: 'assistant', content: 'There was a network error. Please check your connection and try again.', isError: true },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleStageSelect = (stage: ElectionStage) => {
+    setSelectedStageId(stage.id);
+    const userMessage = `Tell me about the '${stage.title}' stage in the Indian election process.`;
+    
+    setMessages((prev) => [
+      ...prev,
+      { id: generateId(), role: 'user', content: userMessage },
+    ]);
+
+    sendMessageToApi(userMessage);
+  };
+
+  const handleSendMessage = (content: string) => {
+    setMessages((prev) => [
+      ...prev,
+      { id: generateId(), role: 'user', content },
+    ]);
+    sendMessageToApi(content);
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="min-h-screen p-4 md:p-8">
+      <div className="max-w-6xl mx-auto flex flex-col items-center">
+        {/* Header section */}
+        <div className="text-center mb-8 mt-8 animate-fade-in-up">
+          <h1 className="text-4xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-white to-green-400 mb-4 drop-shadow-sm">
+            Indian Election Journey
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
+            Discover the democratic process of the world's largest democracy.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        {/* Mode Switcher */}
+        <div className="flex bg-black/40 backdrop-blur-md p-1 rounded-full border border-white/10 mb-12" role="tablist" aria-label="App Modes">
+          <button
+            onClick={() => setMode('explore')}
+            role="tab"
+            aria-selected={mode === 'explore'}
+            aria-controls="explore-panel"
+            className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 ${
+              mode === 'explore' 
+                ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg' 
+                : 'text-gray-400 hover:text-white'
+            }`}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            Explore Timeline
+          </button>
+          <button
+            onClick={() => setMode('quiz')}
+            role="tab"
+            aria-selected={mode === 'quiz'}
+            aria-controls="quiz-panel"
+            className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 ${
+              mode === 'quiz' 
+                ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg' 
+                : 'text-gray-400 hover:text-white'
+            }`}
           >
-            Documentation
-          </a>
+            Take the Quiz
+          </button>
         </div>
-      </main>
-    </div>
+
+        {/* Content Panels */}
+        {mode === 'explore' && (
+          <div id="explore-panel" role="tabpanel" className="w-full animate-fade-in-up">
+            {/* Timeline */}
+            <div className="w-full">
+              <Timeline selectedStageId={selectedStageId} onSelectStage={handleStageSelect} />
+            </div>
+
+            {/* Share Card Feature */}
+            <ShareCard fact="" />
+
+            {/* Chat Interface */}
+            <div className="w-full mt-8 mb-8">
+              <div className="flex flex-col items-center mb-4">
+                <div className="h-1 w-24 bg-gradient-to-r from-orange-500 to-green-500 rounded-full mb-2"></div>
+                <h2 className="text-2xl font-bold text-white">Have questions? Let's talk!</h2>
+              </div>
+              <ChatInterface 
+                messages={messages} 
+                isLoading={isLoading} 
+                onSendMessage={handleSendMessage} 
+              />
+            </div>
+          </div>
+        )}
+
+        {mode === 'quiz' && (
+          <div id="quiz-panel" role="tabpanel" className="w-full animate-fade-in-up py-8">
+            <QuizMode />
+            <div className="mt-12">
+              <ShareCard fact="I just tested my knowledge on the Indian Election Process and scored great!" />
+            </div>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
