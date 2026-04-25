@@ -1,73 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { CheckCircle2, XCircle, RefreshCw, Trophy } from 'lucide-react';
 
-type Question = {
-  id: number;
-  text: string;
-  options: string[];
-  correctAnswerIndex: number;
-  explanation: string;
-};
+interface QuizModeProps {
+  language: 'en' | 'hi';
+}
 
-const QUIZ_QUESTIONS: Question[] = [
-  {
-    id: 1,
-    text: "What does EVM stand for in the Indian election process?",
-    options: ["Electronic Voting Machine", "Electoral Verification Method", "Election Voting Management", "Electronic Voter Matrix"],
-    correctAnswerIndex: 0,
-    explanation: "EVM stands for Electronic Voting Machine, which is used to record votes securely.",
-  },
-  {
-    id: 2,
-    text: "Which independent body is responsible for conducting elections in India?",
-    options: ["The Supreme Court", "The Parliament", "Election Commission of India (ECI)", "Ministry of Home Affairs"],
-    correctAnswerIndex: 2,
-    explanation: "The Election Commission of India (ECI) is an autonomous constitutional authority responsible for administering election processes in India.",
-  },
-  {
-    id: 3,
-    text: "What is the 'Model Code of Conduct'?",
-    options: ["A dress code for politicians", "Guidelines for political parties and candidates during elections", "A guide for voters on how to dress", "Rules for news channels only"],
-    correctAnswerIndex: 1,
-    explanation: "The Model Code of Conduct is a set of guidelines issued by the ECI to regulate political parties and candidates prior to elections.",
-  },
-  {
-    id: 4,
-    text: "What is the minimum voting age for a citizen of India?",
-    options: ["16 years", "18 years", "21 years", "25 years"],
-    correctAnswerIndex: 1,
-    explanation: "The voting age in India was lowered from 21 to 18 years by the 61st Amendment Act of 1988.",
-  },
-  {
-    id: 5,
-    text: "What is NOTA on the voting machine?",
-    options: ["None of the Above", "Number of Total Attendees", "National Organization for Trade Agreements", "New Option To Add"],
-    correctAnswerIndex: 0,
-    explanation: "NOTA stands for 'None of the Above', allowing voters to officially reject all candidates.",
-  }
-];
-
-export default function QuizMode() {
+export default function QuizMode({ language }: QuizModeProps) {
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [score, setScore] = useState(0);
   const [showResults, setShowResults] = useState(false);
+  const hasFetched = useRef(false);
 
-  const currentQuestion = QUIZ_QUESTIONS[currentQuestionIndex];
+  const fetchQuiz = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ language }),
+      });
+      const data = await res.json();
+      setQuestions(data.questions || []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+      setCurrentQuestionIndex(0);
+      setSelectedOption(null);
+      setIsAnswered(false);
+      setScore(0);
+      setShowResults(false);
+    }
+  };
+
+  useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+    fetchQuiz();
+  }, []);
+
+  // Re-fetch when language changes (but not on first mount)
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    fetchQuiz();
+  }, [language]);
+
+  const currentQuestion = questions[currentQuestionIndex];
 
   const handleOptionSelect = (index: number) => {
     if (isAnswered) return;
     setSelectedOption(index);
     setIsAnswered(true);
-
-    if (index === currentQuestion.correctAnswerIndex) {
+    if (index === currentQuestion.correctIndex) {
       setScore(score + 1);
     }
   };
 
   const handleNextQuestion = () => {
-    if (currentQuestionIndex < QUIZ_QUESTIONS.length - 1) {
+    if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setSelectedOption(null);
       setIsAnswered(false);
@@ -77,37 +75,61 @@ export default function QuizMode() {
   };
 
   const restartQuiz = () => {
-    setCurrentQuestionIndex(0);
-    setSelectedOption(null);
-    setIsAnswered(false);
-    setScore(0);
-    setShowResults(false);
+    hasFetched.current = false;
+    fetchQuiz();
   };
 
   if (showResults) {
     return (
       <div className="w-full max-w-2xl mx-auto backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8 shadow-2xl text-center" role="region" aria-label="Quiz Results">
         <Trophy className="w-20 h-20 mx-auto text-yellow-400 mb-6" />
-        <h2 className="text-3xl font-bold text-white mb-2">Quiz Completed!</h2>
-        <p className="text-xl text-gray-300 mb-6">You scored {score} out of {QUIZ_QUESTIONS.length}</p>
-        
+        <h2 className="text-3xl font-bold text-white mb-2">
+          {language === 'hi' ? 'क्विज़ पूर्ण!' : 'Quiz Completed!'}
+        </h2>
+        <p className="text-xl text-gray-300 mb-6">
+          {language === 'hi'
+            ? `आपने ${questions.length} में से ${score} सही उत्तर दिए`
+            : `You scored ${score} out of ${questions.length}`}
+        </p>
+
         <div className="bg-black/20 rounded-2xl p-6 mb-8 text-left">
-          <h3 className="text-lg font-semibold text-white mb-4">Summary</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">
+            {language === 'hi' ? 'सारांश' : 'Summary'}
+          </h3>
           <p className="text-gray-300">
-            {score === QUIZ_QUESTIONS.length ? "Perfect score! You're an expert on Indian elections!" :
-             score >= 3 ? "Great job! You have a solid understanding of the democratic process." :
-             "Good effort! Keep exploring the timeline to learn more."}
+            {score === questions.length
+              ? (language === 'hi' ? 'शानदार! आप भारतीय चुनावों के विशेषज्ञ हैं!' : "Perfect score! You're an expert on Indian elections!")
+              : score >= 3
+                ? (language === 'hi' ? 'बढ़िया! आपको लोकतांत्रिक प्रक्रिया की अच्छी समझ है।' : 'Great job! You have a solid understanding of the democratic process.')
+                : (language === 'hi' ? 'अच्छा प्रयास! अधिक जानने के लिए टाइमलाइन देखें।' : 'Good effort! Keep exploring the timeline to learn more.')}
           </p>
         </div>
 
-        <button 
+        <button
           onClick={restartQuiz}
           className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-8 rounded-full flex items-center justify-center mx-auto transition-colors"
-          aria-label="Restart Quiz"
+          aria-label="Regenerate Quiz"
         >
           <RefreshCw className="w-5 h-5 mr-2" />
-          Try Again
+          {language === 'hi' ? 'नई क्विज़ बनाएं' : 'Regenerate Quiz'}
         </button>
+      </div>
+    );
+  }
+
+  if (isLoading || !currentQuestion) {
+    return (
+      <div className="w-full max-w-2xl mx-auto backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-6 md:p-8 shadow-2xl">
+        <div className="animate-pulse space-y-8">
+          <div className="h-6 bg-white/20 rounded w-1/4"></div>
+          <div className="h-8 bg-white/20 rounded w-3/4"></div>
+          <div className="space-y-4">
+            <div className="h-16 bg-white/10 rounded-xl w-full"></div>
+            <div className="h-16 bg-white/10 rounded-xl w-full"></div>
+            <div className="h-16 bg-white/10 rounded-xl w-full"></div>
+            <div className="h-16 bg-white/10 rounded-xl w-full"></div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -116,23 +138,26 @@ export default function QuizMode() {
     <div className="w-full max-w-2xl mx-auto backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-6 md:p-8 shadow-2xl" role="region" aria-label="Election Quiz">
       <div className="flex justify-between items-center mb-6">
         <span className="text-sm font-semibold text-blue-300 uppercase tracking-wider" aria-live="polite">
-          Question {currentQuestionIndex + 1} of {QUIZ_QUESTIONS.length}
+          {language === 'hi'
+            ? `प्रश्न ${currentQuestionIndex + 1} / ${questions.length}`
+            : `Question ${currentQuestionIndex + 1} of ${questions.length}`}
         </span>
         <span className="text-sm font-semibold text-orange-300">
-          Score: {score}
+          {language === 'hi' ? `स्कोर: ${score}` : `Score: ${score}`}
         </span>
       </div>
 
-      <h2 className="text-2xl font-bold text-white mb-8" id="question-text">{currentQuestion.text}</h2>
+      <h2 className="text-2xl font-bold text-white mb-8" id="question-text">
+        {currentQuestion.question}
+      </h2>
 
       <div className="space-y-4" role="radiogroup" aria-labelledby="question-text">
-        {currentQuestion.options.map((option, index) => {
+        {currentQuestion.options.map((option: string, index: number) => {
           const isSelected = selectedOption === index;
-          const isCorrect = index === currentQuestion.correctAnswerIndex;
+          const isCorrect = index === currentQuestion.correctIndex;
           const isWrong = isSelected && !isCorrect;
 
           let buttonClass = "w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex justify-between items-center ";
-          
           if (!isAnswered) {
             buttonClass += "border-white/10 bg-white/5 hover:bg-white/10 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-200";
           } else if (isCorrect) {
@@ -164,20 +189,24 @@ export default function QuizMode() {
 
       {isAnswered && (
         <div className="mt-8 animate-fade-in-up">
-          <div className={`p-4 rounded-xl ${selectedOption === currentQuestion.correctAnswerIndex ? 'bg-green-500/10 border border-green-500/30' : 'bg-orange-500/10 border border-orange-500/30'}`}>
-            <h4 className={`font-semibold mb-2 ${selectedOption === currentQuestion.correctAnswerIndex ? 'text-green-400' : 'text-orange-400'}`}>
-              {selectedOption === currentQuestion.correctAnswerIndex ? 'Correct!' : 'Incorrect'}
+          <div className={`p-4 rounded-xl ${selectedOption === currentQuestion.correctIndex ? 'bg-green-500/10 border border-green-500/30' : 'bg-orange-500/10 border border-orange-500/30'}`}>
+            <h4 className={`font-semibold mb-2 ${selectedOption === currentQuestion.correctIndex ? 'text-green-400' : 'text-orange-400'}`}>
+              {selectedOption === currentQuestion.correctIndex
+                ? (language === 'hi' ? 'सही!' : 'Correct!')
+                : (language === 'hi' ? 'गलत' : 'Incorrect')}
             </h4>
             <p className="text-gray-200 text-sm leading-relaxed">{currentQuestion.explanation}</p>
           </div>
-          
-          <button 
+
+          <button
             onClick={handleNextQuestion}
             className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-white"
-            aria-label={currentQuestionIndex < QUIZ_QUESTIONS.length - 1 ? "Next Question" : "See Results"}
+            aria-label={currentQuestionIndex < questions.length - 1 ? "Next Question" : "See Results"}
             autoFocus
           >
-            {currentQuestionIndex < QUIZ_QUESTIONS.length - 1 ? "Next Question" : "See Results"}
+            {currentQuestionIndex < questions.length - 1
+              ? (language === 'hi' ? 'अगला प्रश्न' : 'Next Question')
+              : (language === 'hi' ? 'परिणाम देखें' : 'See Results')}
           </button>
         </div>
       )}

@@ -58,9 +58,37 @@ export const STAGES: ElectionStage[] = [
 interface TimelineProps {
   selectedStageId: string | null;
   onSelectStage: (stage: ElectionStage) => void;
+  language: 'en' | 'hi';
 }
 
-export default function Timeline({ selectedStageId, onSelectStage }: TimelineProps) {
+const STAGES_HI: Record<string, { title: string, description: string }> = {
+  registration: {
+    title: 'मतदाता पंजीकरण',
+    description: 'नागरिक आगामी चुनावों में मतदान के लिए नामांकन करते हैं।',
+  },
+  nomination: {
+    title: 'उम्मीदवार नामांकन',
+    description: 'उम्मीदवार चुनाव लड़ने के लिए अपने कागज़ात दाखिल करते हैं।',
+  },
+  campaign: {
+    title: 'प्रचार अवधि',
+    description: 'दल और उम्मीदवार जनसमर्थन के लिए रैलियाँ करते हैं।',
+  },
+  voting: {
+    title: 'मतदान दिवस',
+    description: 'पंजीकृत मतदाता मतदान केंद्रों पर अपना वोट डालते हैं।',
+  },
+  counting: {
+    title: 'मतगणना',
+    description: 'EVM खोले जाते हैं और वोटों की सुरक्षित गिनती की जाती है।',
+  },
+  results: {
+    title: 'परिणाम',
+    description: 'विजेताओं की घोषणा होती है और नई सरकार बनती है।',
+  }
+};
+
+export default function Timeline({ selectedStageId, onSelectStage, language }: TimelineProps) {
   const [currentStageId, setCurrentStageId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -152,8 +180,12 @@ export default function Timeline({ selectedStageId, onSelectStage }: TimelinePro
                       Current Phase
                     </span>
                   )}
-                  <h3 className="font-bold text-xl text-white mb-1 tracking-wide">{stage.title}</h3>
-                  <p className="text-sm leading-snug text-gray-300">{stage.description}</p>
+                  <h3 className="font-bold text-xl text-white mb-1 tracking-wide">
+                    {language === 'hi' ? STAGES_HI[stage.id].title : stage.title}
+                  </h3>
+                  <p className="text-sm leading-snug text-gray-300">
+                    {language === 'hi' ? STAGES_HI[stage.id].description : stage.description}
+                  </p>
                 </div>
               </div>
             );

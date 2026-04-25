@@ -12,9 +12,10 @@ interface ChatInterfaceProps {
   messages: Message[];
   isLoading: boolean;
   onSendMessage: (message: string) => void;
+  language: 'en' | 'hi';
 }
 
-export default function ChatInterface({ messages, isLoading, onSendMessage }: ChatInterfaceProps) {
+export default function ChatInterface({ messages, isLoading, onSendMessage, language }: ChatInterfaceProps) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -26,6 +27,17 @@ export default function ChatInterface({ messages, isLoading, onSendMessage }: Ch
     scrollToBottom();
   }, [messages, isLoading]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT') {
+        e.preventDefault();
+        document.getElementById('chat-input')?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() && !isLoading) {
@@ -34,11 +46,17 @@ export default function ChatInterface({ messages, isLoading, onSendMessage }: Ch
     }
   };
 
-  const presetQuestions = [
-    "How do I register?",
-    "When is voting day?",
-    "What is EVM?"
-  ];
+  const presetQuestions = language === 'hi' 
+    ? [
+        "मैं मतदाता कैसे बनूँ?",
+        "EVM क्या है?",
+        "विजेता कैसे तय होता है?"
+      ]
+    : [
+        "How do I register to vote?",
+        "What is an EVM?",
+        "How are winners decided?"
+      ];
 
   return (
     <div className="w-full max-w-4xl mx-auto mt-8 mb-12">
@@ -134,7 +152,7 @@ export default function ChatInterface({ messages, isLoading, onSendMessage }: Ch
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask a question..."
+              placeholder={language === 'hi' ? "यहाँ सवाल पूछें..." : "Ask a question..."}
               disabled={isLoading}
               aria-disabled={isLoading}
               className="flex-1 bg-white/5 border border-white/20 rounded-full px-6 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all disabled:opacity-50"

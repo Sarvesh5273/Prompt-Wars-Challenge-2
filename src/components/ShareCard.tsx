@@ -4,17 +4,26 @@ import * as htmlToImage from 'html-to-image';
 
 interface ShareCardProps {
   fact: string;
+  language: 'en' | 'hi';
 }
 
-const FACTS = [
-  "India is the world's largest democracy with over 900 million eligible voters.",
-  "The Model Code of Conduct comes into effect as soon as the election schedule is announced.",
-  "EVMs (Electronic Voting Machines) were first used in India in 1982 in Kerala.",
-  "NOTA (None Of The Above) option was introduced in Indian elections in 2013.",
-  "The Election Commission of India (ECI) was established in 1950, a day before India became a republic.",
+const FACTS_EN = [
+  "India has 968 million registered voters",
+  "EVM machines have been used since 1999",
+  "India conducts elections in phases across 44 days",
+  "The Model Code of Conduct activates as soon as elections are announced",
+  "NOTA option has been available since 2013",
 ];
 
-export default function ShareCard({ fact: initialFact }: ShareCardProps) {
+const FACTS_HI = [
+  "भारत में 96.8 करोड़ पंजीकृत मतदाता हैं।",
+  "EVM मशीनों का उपयोग 1999 से हो रहा है।",
+  "भारत में चुनाव 44 दिनों में कई चरणों में होते हैं।",
+  "NOTA विकल्प 2013 से उपलब्ध है।",
+  "आदर्श आचार संहिता चुनाव घोषणा के साथ लागू होती है।",
+];
+
+export default function ShareCard({ fact: initialFact, language }: ShareCardProps) {
   const [fact, setFact] = useState(initialFact);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -22,9 +31,12 @@ export default function ShareCard({ fact: initialFact }: ShareCardProps) {
 
   useEffect(() => {
     if (!initialFact) {
-      setFact(FACTS[Math.floor(Math.random() * FACTS.length)]);
+      const activeFacts = language === 'hi' ? FACTS_HI : FACTS_EN;
+      setFact(activeFacts[Math.floor(Math.random() * activeFacts.length)]);
+    } else {
+      setFact(initialFact);
     }
-  }, [initialFact]);
+  }, [initialFact, language]);
 
   const handleShare = async () => {
     if (!cardRef.current) return;
@@ -75,12 +87,28 @@ export default function ShareCard({ fact: initialFact }: ShareCardProps) {
         <h3 className="text-xl font-bold text-white mb-3">Did you know?</h3>
         <p className="text-gray-200 mb-6 italic">"{fact}"</p>
         
-        <button
-          onClick={handleShare}
-          disabled={isGenerating}
-          className="flex items-center justify-center space-x-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-3 px-8 rounded-full transition-all disabled:opacity-70 w-full"
-          aria-label="Share this fact"
-        >
+        <div className="flex flex-col space-y-3">
+          {!initialFact && (
+            <button
+              onClick={() => {
+                const activeFacts = language === 'hi' ? FACTS_HI : FACTS_EN;
+                let newFact = activeFacts[Math.floor(Math.random() * activeFacts.length)];
+                while (newFact === fact) {
+                  newFact = activeFacts[Math.floor(Math.random() * activeFacts.length)];
+                }
+                setFact(newFact);
+              }}
+              className="flex items-center justify-center bg-white/10 hover:bg-white/20 text-white font-semibold py-2 px-4 rounded-full transition-all border border-white/20"
+            >
+              New Fact
+            </button>
+          )}
+          <button
+            onClick={handleShare}
+            disabled={isGenerating}
+            className="flex items-center justify-center space-x-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-3 px-8 rounded-full transition-all disabled:opacity-70 w-full"
+            aria-label="Share this fact"
+          >
           {isGenerating ? (
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
           ) : isSuccess ? (
@@ -90,6 +118,7 @@ export default function ShareCard({ fact: initialFact }: ShareCardProps) {
           )}
           <span>{isGenerating ? 'Generating...' : isSuccess ? 'Shared!' : 'Share Fact'}</span>
         </button>
+        </div>
       </div>
 
       {/* Hidden card to capture (positioned off-screen so it's rendered but not visible) */}
