@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: "Learn about the Indian election process through an interactive timeline and AI assistant.",
 };
 
+import { GoogleAnalytics } from '@next/third-parties/google';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -25,7 +27,9 @@ export default function RootLayout({
         </div>
         
         {children}
+        <GoogleAnalytics gaId="G-PLACEHOLDER" />
       </body>
+
     </html>
   );
 }

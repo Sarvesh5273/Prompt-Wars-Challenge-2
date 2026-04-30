@@ -3,7 +3,7 @@ import { Share2, Download, Check } from 'lucide-react';
 import * as htmlToImage from 'html-to-image';
 
 interface ShareCardProps {
-  fact: string;
+  fact?: string;
   language: 'en' | 'hi';
 }
 
@@ -23,7 +23,7 @@ const FACTS_HI = [
   "आदर्श आचार संहिता चुनाव घोषणा के साथ लागू होती है।",
 ];
 
-export default function ShareCard({ fact: initialFact, language }: ShareCardProps) {
+export default function ShareCard({ fact: initialFact = "", language }: ShareCardProps) {
   const [fact, setFact] = useState(initialFact);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);

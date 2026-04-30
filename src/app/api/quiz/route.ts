@@ -3,7 +3,8 @@ import { GoogleGenAI } from "@google/genai";
 
 export async function POST(req: NextRequest) {
   try {
-    const { language } = await req.json();
+    let { language } = await req.json();
+    language = ["en", "hi"].includes(language) ? language : "en";
 
     const ai = new GoogleGenAI({
       apiKey: process.env.GEMINI_API_KEY || "",

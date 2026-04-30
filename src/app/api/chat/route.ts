@@ -3,13 +3,26 @@ import { GoogleGenAI } from "@google/genai";
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, language } = await req.json();
+    let { messages, language } = await req.json();
+    language = ["en", "hi"].includes(language) ? language : "en";
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
         { error: "Messages array is required" },
         { status: 400 }
       );
+    }
+
+    for (const msg of messages) {
+      if (msg.content && msg.content.length > 500) {
+        return NextResponse.json(
+          { error: "Message length exceeds 500 characters" },
+          { status: 400 }
+        );
+      }
+      if (msg.content) {
+        msg.content = msg.content.replace(/<[^>]*>?/gm, '');
+      }
     }
 
     const ai = new GoogleGenAI({

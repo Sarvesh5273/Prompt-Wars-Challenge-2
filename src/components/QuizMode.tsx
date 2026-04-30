@@ -71,6 +71,7 @@ export default function QuizMode({ language }: QuizModeProps) {
       setIsAnswered(false);
     } else {
       setShowResults(true);
+      window.gtag?.('event', 'quiz_completed', { score, total: questions.length });
     }
   };
 

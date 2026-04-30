@@ -145,7 +145,7 @@ export default function Home() {
             </div>
 
             {/* Share Card Feature */}
-            <ShareCard fact="" language={language} />
+            <ShareCard language={language} />
 
             {/* Chat Interface */}
             <div className="w-full mt-8 mb-8">

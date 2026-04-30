@@ -42,6 +42,7 @@ export default function ChatInterface({ messages, isLoading, onSendMessage, lang
     e.preventDefault();
     if (input.trim() && !isLoading) {
       onSendMessage(input.trim());
+      window.gtag?.('event', 'chat_message_sent', { language });
       setInput('');
     }
   };
