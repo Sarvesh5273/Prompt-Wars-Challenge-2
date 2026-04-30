@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { CheckCircle2, XCircle, RefreshCw, Trophy } from 'lucide-react';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface QuizModeProps {
   language: 'en' | 'hi';
@@ -64,6 +66,17 @@ export default function QuizMode({ language }: QuizModeProps) {
     }
   };
 
+  const saveResult = async () => {
+    try {
+      await addDoc(collection(db, 'quiz_results'), {
+        score,
+        total: questions.length,
+        language,
+        timestamp: serverTimestamp()
+      })
+    } catch (e) { console.error(e) }
+  }
+
   const handleNextQuestion = () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
@@ -72,6 +85,7 @@ export default function QuizMode({ language }: QuizModeProps) {
     } else {
       setShowResults(true);
       window.gtag?.('event', 'quiz_completed', { score, total: questions.length });
+      saveResult();
     }
   };
 

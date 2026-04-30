@@ -5,6 +5,8 @@ import Timeline, { ElectionStage } from '@/components/Timeline';
 import ChatInterface, { Message } from '@/components/ChatInterface';
 import QuizMode from '@/components/QuizMode';
 import ShareCard from '@/components/ShareCard';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 type AppMode = 'explore' | 'quiz';
 
@@ -42,6 +44,13 @@ export default function Home() {
           ...prev,
           { id: generateId(), role: 'assistant', content: data.reply },
         ]);
+        try {
+          await addDoc(collection(db, 'chat_logs'), {
+            userMessage: messagesToSend[messagesToSend.length - 1].content,
+            language,
+            timestamp: serverTimestamp()
+          });
+        } catch (e) { console.error(e) }
       } else {
         setMessages((prev) => [
           ...prev,

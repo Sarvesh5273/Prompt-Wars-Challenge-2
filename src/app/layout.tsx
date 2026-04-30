@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Noto_Sans } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const notoSans = Noto_Sans({ subsets: ["latin", "devanagari"] });
 
 export const metadata: Metadata = {
   title: "Indian Election Journey",
@@ -18,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-[#0F172A] text-slate-50 selection:bg-orange-500/30 selection:text-orange-200`}>
+      <body className={`${notoSans.className} bg-[#0F172A] text-slate-50 selection:bg-orange-500/30 selection:text-orange-200`}>
         {/* Decorative background elements */}
         <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
           <div className="absolute top-0 right-0 -mr-40 -mt-40 w-96 h-96 bg-orange-500 rounded-full mix-blend-multiply filter blur-[128px] opacity-20"></div>
